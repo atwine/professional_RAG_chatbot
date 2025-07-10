@@ -1,6 +1,25 @@
-streamlit
-ollama
-langchain
-langchain-ollama
-chromadb
-pypdf
+# Core dependencies
+langchain>=0.1.0
+langchain-ollama>=0.1.0
+chromadb>=0.4.0
+
+# LLM and embeddings
+ollama>=0.1.0
+
+# Document processing
+pypdf2>=3.0.0  # Using pypdf2 instead of pypdf for better maintenance
+pdfplumber>=0.10.0
+
+# Flask backend dependencies
+flask>=2.0.0
+flask-cors>=4.0.0
+python-dotenv>=1.0.0
+gunicorn>=21.0.0
+pydantic>=2.0.0
+
+# Original Streamlit app dependencies (for reference)
+streamlit>=1.30.0
+
+# Testing and development
+pytest>=7.0.0
+black>=23.0.0

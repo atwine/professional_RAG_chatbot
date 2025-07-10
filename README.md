@@ -71,6 +71,24 @@ Follow these steps to set up and run the project on your local machine.
     pip install -r requirements.txt
     ```
 
+    **Note about PATH:** Some CLI tools (like gunicorn and pdfplumber) might be installed to a location not on your system PATH. If you encounter "command not found" errors, you have two options:
+    
+    - **Option 1:** Add the Python Scripts directory to your PATH:
+      ```bash
+      # For Windows (run in PowerShell as Administrator)
+      $env:Path += ";C:\Users\[username]\AppData\Roaming\Python\Python312\Scripts"
+      
+      # For permanent addition on Windows, search for "Environment Variables" in settings
+      # and add the path to your User variables
+      ```
+    
+    - **Option 2:** Use full paths when invoking these tools:
+      ```bash
+      # Instead of: gunicorn app_flask:app
+      # Use:
+      C:\Users\[username]\AppData\Roaming\Python\Python312\Scripts\gunicorn.exe app_flask:app
+      ```
+
 4.  **Download the necessary Ollama models:**
     ```bash
     ollama pull llama3.1:8b
