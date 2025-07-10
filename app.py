@@ -45,17 +45,20 @@ if prompt := st.chat_input("What is your question?"):
             st.markdown(prompt)
 
         # --- Generate AI Response ---
+        # --- Generate AI Response ---
         with st.chat_message("assistant"):
-            message_placeholder = st.empty()
-            full_response = ""
-
-            # 1. Retrieve relevant context
+            # 1. Retrieve relevant context (this is the slow part)
             relevant_docs = retriever.get_relevant_documents(prompt)
             context_str = "\n\n".join([doc.page_content for doc in relevant_docs])
 
             # 2. Create the prompt for the LLM
             formatted_prompt = f"""
-            You are a helpful assistant. Answer the user's question based ONLY on the following context. If the answer is not in the context, say you don't know.
+            You are a friendly and knowledgeable AI assistant. Your personality is that of an approachable expert; you are encouraging and clear.
+
+            Follow these rules strictly:
+            1. If the user's question is a simple greeting (like "hello" or "hi"), respond with a friendly greeting and ask how you can help with the documents. Do not use the context for this. (You can even talk about the documents you have in your knowledge base in summary and give sample questions)
+            2. For all other questions, you MUST base your answer ONLY on the provided context below.
+            3. If the answer to a question is not found in the context, you must clearly state, "I couldn't find an answer to that in the provided documents. Is there anything else I can help with?" Do not make up information.
 
             [CONTEXT]
             {context_str}
@@ -65,12 +68,14 @@ if prompt := st.chat_input("What is your question?"):
             """
 
             # 3. Stream the response from the LLM
-            llm = ChatOllama(model="llama3.1:8b", temperature=0)
-            try:
+            llm = ChatOllama(model="llama3.1:8b", temperature=0.7)
+            
+            def stream_response():
                 for chunk in llm.stream(formatted_prompt):
-                    full_response += chunk
-                    message_placeholder.markdown(full_response + "▌")
-                message_placeholder.markdown(full_response)
+                    yield chunk.content
+            
+            try:
+                full_response = st.write_stream(stream_response)
             except Exception as e:
                 st.error(f"An error occurred with the AI model: {e}")
                 full_response = "Sorry, I encountered an error."
