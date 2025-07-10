@@ -38,8 +38,8 @@ class VectorStoreService:
         self.embedding_model = embedding_model
         self.collection_name = collection_name
         
-        # Create the embedding function using Ollama
-        self.embedding_function = embedding_functions.OllamaEmbeddingFunction(
+        # Create a custom embedding function that works with Ollama
+        self.embedding_function = self._create_custom_ollama_embedding_function(
             model_name=embedding_model,
             url=config.OLLAMA_BASE_URL
         )
@@ -49,6 +49,66 @@ class VectorStoreService:
         
         logger.info(f"Initialized vector store service with collection: {collection_name}")
     
+    def _create_custom_ollama_embedding_function(self, model_name, url):
+        """Create a custom embedding function that works with Ollama API.
+        
+        Args:
+            model_name: Name of the Ollama model to use for embeddings.
+            url: Base URL of the Ollama API.
+            
+        Returns:
+            A class that implements the ChromaDB EmbeddingFunction interface.
+        """
+        import httpx
+        import json
+        import numpy as np
+        from chromadb.api.types import Documents, EmbeddingFunction
+        
+        # Define a class that implements the ChromaDB EmbeddingFunction interface
+        class CustomOllamaEmbedding(EmbeddingFunction):
+            def __init__(self, model_name, url):
+                self.model_name = model_name
+                self.url = url
+            
+            def __call__(self, input: Documents) -> list:
+                """Generate embeddings for the input texts.
+                
+                Args:
+                    input: List of texts to generate embeddings for.
+                    
+                Returns:
+                    List of embeddings, one for each input text.
+                """
+                # Generate embeddings for each text
+                embeddings = []
+                for text in input:
+                    try:
+                        # Make a request to the Ollama API
+                        response = httpx.post(
+                            f"{url}/api/embeddings",
+                            json={"model": model_name, "prompt": text}
+                        )
+                        response.raise_for_status()
+                        
+                        # Parse the response
+                        data = response.json()
+                        embedding = data.get('embedding')
+                        
+                        if embedding:
+                            embeddings.append(embedding)
+                        else:
+                            logger.error(f"No embedding returned for text: {text[:50]}...")
+                            # Return a zero vector as fallback
+                            embeddings.append([0.0] * 768)  # Typical embedding size
+                    except Exception as e:
+                        logger.error(f"Error generating embedding: {e}")
+                        # Return a zero vector as fallback
+                        embeddings.append([0.0] * 768)  # Typical embedding size
+                
+                return embeddings
+        
+        return CustomOllamaEmbedding(model_name, url)
+
     def _init_client(self):
         """Initialize the ChromaDB client and collection."""
         try:
@@ -260,6 +320,123 @@ class VectorStoreService:
         except Exception as e:
             logger.error(f"Error deleting collection: {e}")
             raise
+    
+    def add_texts(self, document_id: str, chunks: List[Dict[str, Any]], metadata: Dict[str, Any]) -> bool:
+        """
+        Add text chunks from a document to the vector store.
+        
+        Args:
+            document_id: ID of the document.
+            chunks: List of dictionaries containing text content and metadata.
+            metadata: Document-level metadata.
+            
+        Returns:
+            True if successful, False otherwise.
+        """
+        try:
+            # Extract texts and metadatas from chunks
+            texts = [chunk["content"] for chunk in chunks]
+            metadatas = [chunk["metadata"] for chunk in chunks]
+            
+            # Generate IDs for each chunk
+            ids = [f"{document_id}_chunk_{i}" for i in range(len(chunks))]
+            
+            # Add to vector store
+            self.add_documents(texts, metadatas, ids)
+            
+            # Store document metadata in a separate collection or database
+            # For now, we'll add a special entry in the vector store
+            self.collection.add(
+                documents=[f"Document metadata for {document_id}"],
+                metadatas=[{"document_id": document_id, "is_metadata": True, **metadata}],
+                ids=[f"{document_id}_metadata"]
+            )
+            
+            return True
+        except Exception as e:
+            logger.error(f"Error adding text chunks to vector store: {e}")
+            return False
+    
+    def list_documents(self) -> List[Dict[str, Any]]:
+        """
+        List all documents in the vector store.
+        
+        Returns:
+            List of document metadata.
+        """
+        try:
+            # Query for all items with is_metadata=True
+            results = self.collection.get(
+                where={"is_metadata": True}
+            )
+            
+            # Extract and format document metadata
+            documents = []
+            if results and results["metadatas"]:
+                for i, metadata in enumerate(results["metadatas"]):
+                    # Remove internal flags
+                    doc_metadata = {k: v for k, v in metadata.items() if k != "is_metadata"}
+                    documents.append(doc_metadata)
+            
+            return documents
+        except Exception as e:
+            logger.error(f"Error listing documents: {e}")
+            return []
+    
+    def get_document_metadata(self, document_id: str) -> Optional[Dict[str, Any]]:
+        """
+        Get metadata for a specific document.
+        
+        Args:
+            document_id: ID of the document to retrieve.
+            
+        Returns:
+            Document metadata or None if not found.
+        """
+        try:
+            # Query for the document metadata
+            results = self.collection.get(
+                ids=[f"{document_id}_metadata"]
+            )
+            
+            # Extract and return metadata if found
+            if results and results["metadatas"] and len(results["metadatas"]) > 0:
+                metadata = results["metadatas"][0]
+                # Remove internal flags
+                return {k: v for k, v in metadata.items() if k != "is_metadata"}
+            else:
+                return None
+        except Exception as e:
+            logger.error(f"Error getting document metadata: {e}")
+            return None
+    
+    def delete_document(self, document_id: str) -> bool:
+        """
+        Delete a document and all its chunks from the vector store.
+        
+        Args:
+            document_id: ID of the document to delete.
+            
+        Returns:
+            True if successful, False otherwise.
+        """
+        try:
+            # Get all chunk IDs for this document
+            results = self.collection.get(
+                where={"document_id": document_id}
+            )
+            
+            # Delete all chunks and metadata
+            if results and results["ids"]:
+                self.collection.delete(ids=results["ids"])
+                logger.info(f"Deleted document {document_id} with {len(results['ids'])} chunks")
+                return True
+            else:
+                logger.warning(f"Document {document_id} not found")
+                return False
+        except Exception as e:
+            logger.error(f"Error deleting document: {e}")
+            return False
 
 
 # Test function
