@@ -1,6 +1,6 @@
 streamlit
 ollama
 langchain
-langchain_community
+langchain-ollama
 chromadb
 pypdf
