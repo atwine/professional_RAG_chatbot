@@ -7,9 +7,24 @@ from langchain_ollama import ChatOllama
 DB_PATH = "chroma_db"
 
 # --- App Setup ---
-st.set_page_config(page_title="Professional RAG Chatbot", page_icon="🤖")
-st.title("Professional RAG Chatbot")
-st.write("Ask any question about your documents, and I'll provide an answer based on the knowledge base.")
+st.set_page_config(page_title="Professional RAG Chatbot", page_icon="🤖", layout="wide")
+
+# --- Custom CSS for chat bubbles ---
+st.markdown('''
+<style>
+    .stChatMessage:has(div[data-testid="chatAvatarIcon-assistant"]) {
+        background-color: #f0f2f6;
+    }
+</style>
+''', unsafe_allow_html=True)
+
+with st.sidebar:
+    st.title("Professional RAG Chatbot")
+    st.write("Ask any question about your documents, and I'll provide an answer based on the knowledge base.")
+    
+    if st.button("New Chat"):
+        st.session_state.messages = []
+        st.rerun()
 
 # --- Load the Knowledge Base ---
 @st.cache_resource
@@ -29,10 +44,31 @@ retriever = load_retriever()
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# --- Display Chat History ---
-for message in st.session_state.messages:
-    with st.chat_message(message["role"]):
-        st.markdown(message["content"])
+st.title("Chat with your Documents")
+
+# --- Display Chat History or Welcome Screen ---
+if not st.session_state.messages:
+    st.info("Welcome! Ask a question about your documents to get started.")
+    # You can add more complex welcome messages or example questions here
+else:
+    for idx, message in enumerate(st.session_state.messages):
+        with st.chat_message(message["role"], avatar="🤖" if message["role"] == "assistant" else None):
+            st.markdown(message["content"])
+
+            # For assistant messages, add feedback buttons and source expander
+            if message["role"] == "assistant":
+                col1, col2 = st.columns([1, 15])
+                with col1:
+                    if st.button("👍", key=f"up_{idx}"):
+                        st.toast("Thanks for your feedback!")
+                with col2:
+                    if st.button("👎", key=f"down_{idx}"):
+                        st.toast("Thanks for your feedback! We'll use this to improve.")
+
+                if "sources" in message:
+                    with st.expander("Show Sources"):
+                        for doc in message["sources"]:
+                            st.info(doc.page_content)
 
 # --- Handle User Input ---
 if prompt := st.chat_input("What is your question?"):
@@ -46,7 +82,7 @@ if prompt := st.chat_input("What is your question?"):
 
         # --- Generate AI Response ---
         # --- Generate AI Response ---
-        with st.chat_message("assistant"):
+        with st.chat_message("assistant", avatar="🤖"):
             # 1. Retrieve relevant context (this is the slow part)
             relevant_docs = retriever.get_relevant_documents(prompt)
             context_str = "\n\n".join([doc.page_content for doc in relevant_docs])
@@ -80,5 +116,9 @@ if prompt := st.chat_input("What is your question?"):
                 st.error(f"An error occurred with the AI model: {e}")
                 full_response = "Sorry, I encountered an error."
 
-        # Add AI response to chat history
-        st.session_state.messages.append({"role": "assistant", "content": full_response})
+            with st.expander("Show Sources"):
+                for doc in relevant_docs:
+                    st.info(doc.page_content)
+
+        # Add AI response to chat history, ensuring sources are included
+        st.session_state.messages.append({"role": "assistant", "content": full_response, "sources": relevant_docs})
