@@ -2,8 +2,7 @@
 
 A portfolio-ready Retrieval-Augmented Generation (RAG) chatbot that runs entirely on your local machine using Ollama and Streamlit. This project demonstrates a complete, end-to-end workflow for building a private, context-aware AI assistant that can answer questions about your own documents.
 
-<!-- Placeholder for a GIF of the app in action -->
-<!-- ![Chatbot Demo](./demo.gif) -->
+![alt text](image.png)
 
 ## Overview
 
