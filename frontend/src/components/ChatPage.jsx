@@ -34,7 +34,7 @@ const ChatPage = ({ serverStatus }) => {
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ message }),
+          body: JSON.stringify({ question: message }),
         });
         
         if (!response.ok) {
@@ -46,10 +46,10 @@ const ChatPage = ({ serverStatus }) => {
         // Add assistant message to chat
         const assistantMessage = {
           id: Date.now() + 1,
-          content: data.response,
+          content: data.answer,
           role: 'assistant',
           timestamp: new Date().toISOString(),
-          sources: data.sources || []
+          sources: data.citations || []
         };
         
         setMessages(prev => [...prev, assistantMessage]);
