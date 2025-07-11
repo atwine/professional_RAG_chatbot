@@ -1,119 +1,105 @@
-# Professional RAG Chatbot with Local AI
+# Health AI Consultant
 
-A portfolio-ready Retrieval-Augmented Generation (RAG) chatbot that runs entirely on your local machine using Ollama and Streamlit. This project demonstrates a complete, end-to-end workflow for building a private, context-aware AI assistant that can answer questions about your own documents.
+A professional RAG-powered health consultation application using Flask, React, and Ollama.
 
-![alt text](image.png)
+![Frontend](image-2.png)
 
 ## Overview
 
-This application provides a user-friendly chat interface to interact with a knowledge base created from your personal PDF documents. It uses a RAG architecture to ensure that the AI's answers are grounded in the provided context, preventing hallucination and providing factual responses. The entire process, from data ingestion to answer generation, runs locally, ensuring your data remains private.
+Health AI Consultant is a modern web application that provides AI-powered health information and consultation services. It uses Retrieval-Augmented Generation (RAG) to ensure responses are grounded in reliable health information, preventing hallucinations and providing factual answers to health-related queries.
+
+The application features a clean, professional user interface built with React and Tailwind CSS, and a robust backend powered by Flask and Ollama. All processing happens locally, ensuring privacy and data security.
+
+## Features
+
+- **AI-Powered Health Chat**: Ask health-related questions and receive informative responses
+- **Document Upload**: Add health documents to enhance the knowledge base
+- **Citation Support**: View sources for information provided in responses
+- **Responsive Design**: Works on desktop and mobile devices
+- **Local Processing**: All data stays on your machine for privacy
 
 ## Tech Stack
 
-- **Frontend:** [Streamlit](https://streamlit.io/) - For building the interactive web UI.
-- **LLM & Embeddings:** [Ollama](https://ollama.com/) - To run local large language models (like Llama 3.1) and embedding models.
-- **Core Logic:** [LangChain](https://www.langchain.com/) - For orchestrating the RAG pipeline, including document loading, splitting, and vector store interaction.
-- **Vector Database:** [ChromaDB](https://www.trychroma.com/) - For creating and storing persistent vector embeddings of the documents.
-- **PDF Processing:** [PyPDF](https://pypi.org/project/pypdf/)
+### Backend
+- **Flask**: Python web framework for the API
+- **Ollama**: Local large language model inference
+- **ChromaDB**: Vector database for document storage and retrieval
+- **LangChain**: Framework for building LLM applications
 
-## Key Features
+### Frontend
+- **React**: JavaScript library for building the user interface
+- **Vite**: Next-generation frontend tooling
+- **Tailwind CSS**: Utility-first CSS framework
+- **React Router**: Declarative routing for React
 
-- **Local First:** All models and data are processed and stored on your local machine. No data ever leaves your computer.
-- **RAG Architecture:** Ensures answers are accurate and based on the content of your documents.
-- **Friendly UI:** A clean, intuitive chat interface built with Streamlit.
-- **Easy Data Ingestion:** Simply place your PDFs in the `data` folder and run a single script to build the knowledge base.
-- **Modular & Professional:** The code is structured professionally with a clear separation of concerns, a virtual environment, and version control.
-
-## Project Structure
-
-```
-professional-rag-chatbot/
-├── .gitignore
-├── app.py             # The Streamlit frontend application
-├── ingest.py          # Script to process PDFs and build the vector DB
-├── requirements.txt   # Python dependencies
-├── README.md          # You are here!
-├── data/              # Folder for your source PDF documents
-│   └── .gitkeep
-└── venv/              # Python virtual environment
-```
-
-## Setup and Installation
-
-Follow these steps to set up and run the project on your local machine.
+## Getting Started
 
 ### Prerequisites
 
-1.  **Python 3.8+**
-2.  **Ollama:** Make sure you have [Ollama installed](https://ollama.com/download) and running.
+- Python 3.9+
+- Node.js 16+
+- Ollama installed and running locally
 
-### Installation Steps
+### Installation
 
-1.  **Clone the repository:**
-    ```bash
-    git clone https://github.com/atwine/professional_RAG_chatbot.git
-    cd professional-rag-chatbot
-    ```
+1. Clone the repository:
+   ```
+   git clone https://github.com/yourusername/health-ai-consultant.git
+   cd health-ai-consultant
+   ```
 
-2.  **Create and activate a virtual environment:**
-    ```bash
-    # For Windows
-    python -m venv venv
-    .\venv\Scripts\activate
+2. Set up the backend:
+   ```
+   # Install Python dependencies
+   pip install -r requirements.txt
+   ```
 
-    # For macOS/Linux
-    python3 -m venv venv
-    source venv/bin/activate
-    ```
+3. Set up the frontend:
+   ```
+   cd frontend
+   npm install
+   ```
 
-3.  **Install the required dependencies:**
-    ```bash
-    pip install -r requirements.txt
-    ```
+4. Create a `.env` file in the root directory with the following content:
+   ```
+   OLLAMA_BASE_URL=http://localhost:11434
+   FLASK_ENV=development
+   DEBUG=True
+   ```
 
-    **Note about PATH:** Some CLI tools (like gunicorn and pdfplumber) might be installed to a location not on your system PATH. If you encounter "command not found" errors, you have two options:
-    
-    - **Option 1:** Add the Python Scripts directory to your PATH:
-      ```bash
-      # For Windows (run in PowerShell as Administrator)
-      $env:Path += ";C:\Users\[username]\AppData\Roaming\Python\Python312\Scripts"
-      
-      # For permanent addition on Windows, search for "Environment Variables" in settings
-      # and add the path to your User variables
-      ```
-    
-    - **Option 2:** Use full paths when invoking these tools:
-      ```bash
-      # Instead of: gunicorn app_flask:app
-      # Use:
-      C:\Users\[username]\AppData\Roaming\Python\Python312\Scripts\gunicorn.exe app_flask:app
-      ```
+### Running the Application
 
-4.  **Download the necessary Ollama models:**
-    ```bash
-    ollama pull llama3.1:8b
-    ollama pull nomic-embed-text
-    ```
+1. Start the backend server:
+   ```
+   python app_flask.py
+   ```
+
+2. In a separate terminal, start the frontend development server:
+   ```
+   cd frontend
+   npm run dev
+   ```
+
+3. Open your browser and navigate to `http://localhost:3000`
 
 ## Usage
 
-1.  **Add Your Documents:**
-    - Place any PDF files you want to chat with into the `data/` directory.
+1. **Chat Interface**: Type your health-related questions in the chat input and press Enter or click the Send button
+2. **Document Upload**: Navigate to the Upload section to add health documents to the knowledge base
+3. **View Sources**: Click on citations in responses to see the source of information
 
-2.  **Build the Knowledge Base:**
-    - Run the ingestion script. This will process the PDFs, create embeddings, and save them to a local ChromaDB vector store.
-    ```bash
-    python ingest.py
-    ```
-    - You only need to run this once, or whenever you add, remove, or change documents in the `data/` folder.
+## Deployment
 
-3.  **Run the Chatbot Application:**
-    - Start the Streamlit app.
-    ```bash
-    streamlit run app.py
-    ```
-    - Your browser should open to the chat interface, ready for your questions!
+The application can be deployed using:
+- Frontend: Vercel, Netlify, or GitHub Pages
+- Backend: Railway, Render, or any platform supporting Python applications
 
----
+## License
 
-*This project was built with the assistance of Cascade, an agentic AI coding assistant.*
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## Acknowledgments
+
+- Built with Ollama for local AI inference
+- Powered by LangChain and ChromaDB for RAG capabilities
+- Designed with Tailwind CSS for a modern UI
